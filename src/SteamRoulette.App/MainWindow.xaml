@@ -1,13 +1,15 @@
 <Window x:Class="SteamRoulette.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Steam Roulette" Height="640" Width="960"
-        MinHeight="520" MinWidth="760"
+        Title="Steam Roulette" Height="700" Width="1040"
+        MinHeight="560" MinWidth="820"
         WindowStartupLocation="CenterScreen"
         Background="#0F1218" Foreground="#C7D5E0"
         FontFamily="Segoe UI" FontSize="13">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
         <Style TargetType="Button" x:Key="Chip">
             <Setter Property="Background" Value="#1B2230"/>
             <Setter Property="Foreground" Value="#C7D5E0"/>
@@ -47,7 +49,7 @@
                     <Setter Property="Background" Value="#33ACFF"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.45"/>
+                    <Setter Property="Opacity" Value="0.4"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -69,6 +71,99 @@
 
         <Style TargetType="TextBlock" x:Key="Muted">
             <Setter Property="Foreground" Value="#8F98A0"/>
+        </Style>
+
+        <Style TargetType="TextBlock" x:Key="StatLabel">
+            <Setter Property="Foreground" Value="#6E7681"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style TargetType="TextBlock" x:Key="StatValue">
+            <Setter Property="Foreground" Value="#E6EDF3"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+
+        <!-- Dark combo box -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#E6EDF3"/>
+            <Setter Property="Background" Value="#161B24"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="#161B24" BorderBrush="#2A3342" BorderThickness="1" CornerRadius="6">
+                                            <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
+                                                  Data="M 0 0 L 4 4 L 8 0 Z" Fill="#8F98A0"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter Margin="10,0,26,0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                              IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"/>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Border Background="#161B24" BorderBrush="#2A3342" BorderThickness="1" CornerRadius="6"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="320">
+                                    <ScrollViewer>
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#E6EDF3"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bg" Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#243042"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark list -->
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="#11161F"/>
+            <Setter Property="Foreground" Value="#8F98A0"/>
+            <Setter Property="BorderBrush" Value="#222C3A"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="#C7D5E0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="2,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1B2230"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#243042"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
     </Window.Resources>
 
@@ -101,37 +196,36 @@
                 <CheckBox Content="Unplayed only" IsChecked="{Binding UnplayedOnly}"/>
                 <CheckBox Content="Favor my backlog" IsChecked="{Binding WeightTowardBacklog}"
                           ToolTip="Weight the roll toward games with little playtime"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                    <TextBlock Text="Max hours" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox Width="52" Text="{Binding MaxHoursText, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                    <TextBlock Text="Hide played in last (days)" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox Width="52" Text="{Binding ExcludeDaysText, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="Search" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox Width="140" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="Genre" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <ComboBox Width="150" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}"
-                              Background="#161B24" Foreground="#E6EDF3"/>
-                </StackPanel>
                 <CheckBox Content="Has achievements" IsChecked="{Binding RequireAchievements}"/>
                 <CheckBox Content="Unfinished achievements" IsChecked="{Binding OnlyIncomplete}"
                           ToolTip="Only games with achievements you haven't 100%-ed yet"/>
+                <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Genre" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox Width="150" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Max hours" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Width="48" Text="{Binding MaxHoursText, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Hide played &lt; (days)" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Width="48" Text="{Binding ExcludeDaysText, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Search" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Width="150" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
             </WrapPanel>
         </Border>
 
-        <!-- Main: pick card + list -->
+        <!-- Main: stats panel + list -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380"/>
+                <ColumnDefinition Width="400"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left: roulette + result -->
+            <!-- Left: roulette + the rolled-game stats panel -->
             <Border Grid.Column="0" Background="#141A24" BorderBrush="#222C3A" BorderThickness="1"
                     CornerRadius="10" Padding="18" Margin="0,0,14,0">
                 <DockPanel>
@@ -142,17 +236,78 @@
                             Margin="0,14,0,0" Padding="12,12" Click="Launch_Click"
                             IsEnabled="{Binding HasPick}"/>
 
-                    <Border Margin="0,16,0,0" Background="#0C0F15" CornerRadius="8" SnapsToDevicePixels="True">
-                        <Grid>
-                            <Image Source="{Binding Picked.HeaderImageUrl}" Stretch="Uniform" VerticalAlignment="Top"/>
-                            <StackPanel VerticalAlignment="Bottom" Background="#CC0C0F15">
-                                <TextBlock Text="{Binding PickedTitle}" FontSize="17" FontWeight="SemiBold"
-                                           Foreground="#FFFFFF" TextWrapping="Wrap" Margin="14,12,14,2"/>
-                                <TextBlock Text="{Binding PickedSubtitle}" Style="{StaticResource Muted}"
-                                           Margin="14,0,14,12"/>
+                    <ScrollViewer Margin="0,16,0,0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Capsule art -->
+                            <Border Background="#0C0F15" CornerRadius="8" MinHeight="150" SnapsToDevicePixels="True">
+                                <Image Source="{Binding Picked.HeaderImageUrl}" Stretch="Uniform" VerticalAlignment="Top"/>
+                            </Border>
+
+                            <!-- Title + subtitle -->
+                            <TextBlock Text="{Binding PickedTitle}" FontSize="19" FontWeight="SemiBold"
+                                       Foreground="#FFFFFF" TextWrapping="Wrap" Margin="0,14,0,0"/>
+                            <TextBlock Text="{Binding PickedSubtitle}" Style="{StaticResource Muted}" Margin="0,4,0,0"/>
+
+                            <!-- Genre chips -->
+                            <ItemsControl ItemsSource="{Binding PickedGenres}" Margin="0,12,0,0"
+                                          Visibility="{Binding HasGenres, Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1B2230" BorderBrush="#2A3342" BorderThickness="1"
+                                                CornerRadius="10" Padding="9,3" Margin="0,0,6,6">
+                                            <TextBlock Text="{Binding}" Foreground="#C7D5E0" FontSize="11"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Playtime -->
+                            <StackPanel Margin="0,12,0,0" Visibility="{Binding HasPick, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="PLAYTIME" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding PickedPlaytime}" Style="{StaticResource StatValue}"/>
                             </StackPanel>
-                        </Grid>
-                    </Border>
+
+                            <!-- Achievements -->
+                            <StackPanel Margin="0,12,0,0" Visibility="{Binding HasPickedAchievements, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="ACHIEVEMENTS" Style="{StaticResource StatLabel}"/>
+                                <ProgressBar Height="8" Minimum="0" Maximum="100" Margin="0,5,0,0"
+                                             Value="{Binding PickedAchievementPercent, Mode=OneWay}"
+                                             Foreground="#66C0F4" Background="#0C0F15" BorderThickness="0"/>
+                                <TextBlock Text="{Binding PickedAchievementText}" Foreground="#C7D5E0"
+                                           FontSize="12" Margin="0,5,0,0"/>
+                            </StackPanel>
+
+                            <!-- Released + Metacritic -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Visibility="{Binding HasRelease, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="RELEASED" Style="{StaticResource StatLabel}"/>
+                                    <TextBlock Text="{Binding PickedRelease}" Style="{StaticResource StatValue}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom"
+                                            Visibility="{Binding HasMetacritic, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="METACRITIC" Style="{StaticResource StatLabel}"/>
+                                    <Border Background="#4C9C2E" CornerRadius="4" Padding="8,2" Margin="0,3,0,0"
+                                            HorizontalAlignment="Left">
+                                        <TextBlock Text="{Binding PickedMetacritic}" Foreground="White" FontWeight="SemiBold"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Description -->
+                            <StackPanel Margin="0,14,0,0" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="ABOUT" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding PickedDescription}" Foreground="#A9B4BE" TextWrapping="Wrap"
+                                           FontSize="12.5" Margin="0,4,0,0" LineHeight="18"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
 
@@ -169,11 +324,13 @@
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="Game" Width="320"
+                                <GridViewColumn Header="Game" Width="300"
                                                 DisplayMemberBinding="{Binding Name}"/>
-                                <GridViewColumn Header="Hours" Width="80"
+                                <GridViewColumn Header="Hours" Width="70"
                                                 DisplayMemberBinding="{Binding PlaytimeHours, StringFormat={}{0:0.0}}"/>
-                                <GridViewColumn Header="Installed" Width="80"
+                                <GridViewColumn Header="Achievements" Width="100"
+                                                DisplayMemberBinding="{Binding AchievementSummary}"/>
+                                <GridViewColumn Header="Installed" Width="70"
                                                 DisplayMemberBinding="{Binding InstalledMark}"/>
                             </GridView>
                         </ListView.View>
