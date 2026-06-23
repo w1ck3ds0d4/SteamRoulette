@@ -20,4 +20,13 @@ public sealed class RouletteFilter
 
     /// <summary>Bias the pick toward less-played games instead of a flat random draw.</summary>
     public bool WeightTowardUnplayed { get; set; }
+
+    /// <summary>Only games tagged with this genre (case-insensitive). Null/empty = any.</summary>
+    public string? Genre { get; set; }
+
+    /// <summary>Only games that have Steam achievements.</summary>
+    public bool RequireAchievements { get; set; }
+
+    /// <summary>Only games that have achievements and aren't 100% unlocked yet.</summary>
+    public bool OnlyIncompleteAchievements { get; set; }
 }
