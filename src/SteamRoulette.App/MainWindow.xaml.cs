@@ -20,7 +20,8 @@ public partial class MainWindow : Window
 
         _settings = AppSettings.Load();
         var loader = new LibraryLoader(new WebApiLibrarySource(Http), new LocalLibrarySource());
-        _vm = new MainViewModel(loader, _settings);
+        var enricher = new GameEnricher(Http);
+        _vm = new MainViewModel(loader, enricher, _settings);
         DataContext = _vm;
 
         Loaded += async (_, _) => await _vm.LoadAsync();

@@ -109,10 +109,18 @@
                     <TextBlock Text="Hide played in last (days)" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBox Width="52" Text="{Binding ExcludeDaysText, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="Search" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox Width="150" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Width="140" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Genre" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox Width="150" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}"
+                              Background="#161B24" Foreground="#E6EDF3"/>
+                </StackPanel>
+                <CheckBox Content="Has achievements" IsChecked="{Binding RequireAchievements}"/>
+                <CheckBox Content="Unfinished achievements" IsChecked="{Binding OnlyIncomplete}"
+                          ToolTip="Only games with achievements you haven't 100%-ed yet"/>
             </WrapPanel>
         </Border>
 
@@ -151,8 +159,10 @@
             <!-- Right: filtered library -->
             <Border Grid.Column="1" Background="#141A24" BorderBrush="#222C3A" BorderThickness="1" CornerRadius="10">
                 <DockPanel Margin="2">
-                    <TextBlock DockPanel.Dock="Top" Text="{Binding CountText}" Style="{StaticResource Muted}"
-                               Margin="14,10,14,8"/>
+                    <DockPanel DockPanel.Dock="Top" Margin="14,10,14,8">
+                        <TextBlock Text="{Binding EnrichStatus}" DockPanel.Dock="Right" Foreground="#66C0F4"/>
+                        <TextBlock Text="{Binding CountText}" Style="{StaticResource Muted}"/>
+                    </DockPanel>
                     <ListView x:Name="GamesList" ItemsSource="{Binding Games}" Background="Transparent"
                               BorderThickness="0" Foreground="#C7D5E0"
                               MouseDoubleClick="GamesList_DoubleClick"
