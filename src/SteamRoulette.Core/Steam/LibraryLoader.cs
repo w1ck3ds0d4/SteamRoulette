@@ -45,6 +45,7 @@ public sealed class LibraryLoader
                         if (!installedById.TryGetValue(game.AppId, out var local)) continue;
                         game.Installed = true;
                         game.InstallDir = local.InstallDir;
+                        game.InstallPath = local.InstallPath;
                         game.SizeOnDiskBytes = local.SizeOnDiskBytes;
                         game.LastPlayed ??= local.LastPlayed;
                     }

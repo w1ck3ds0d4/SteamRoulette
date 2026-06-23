@@ -23,6 +23,10 @@ public sealed class SteamGame
     public bool Installed { get; set; }
 
     public string? InstallDir { get; set; }
+
+    /// <summary>Full path to the game's install folder, when known (installed games).</summary>
+    public string? InstallPath { get; set; }
+
     public long SizeOnDiskBytes { get; set; }
 
     /// <summary>Last time the game was played, if known.</summary>
