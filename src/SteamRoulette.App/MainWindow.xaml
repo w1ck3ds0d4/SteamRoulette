@@ -319,6 +319,11 @@
                             Margin="0,14,0,0" Padding="12,12" Click="Launch_Click"
                             IsEnabled="{Binding HasPick}"/>
 
+                    <Button DockPanel.Dock="Bottom" Content="🛡  Check this game for malware" Style="{StaticResource Chip}"
+                            Margin="0,10,0,0" Padding="10,9" Click="Malware_Click"
+                            ToolTip="Hash the game's main .exe and open its VirusTotal report (the file is not uploaded)"
+                            Visibility="{Binding CanCheckMalware, Converter={StaticResource BoolToVis}}"/>
+
                     <ScrollViewer Margin="0,16,0,0" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <!-- Capsule art -->

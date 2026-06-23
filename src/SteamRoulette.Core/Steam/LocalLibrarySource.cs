@@ -48,12 +48,22 @@ public sealed class LocalLibrarySource
             long.TryParse(state["LastPlayed"]?.Value, out var lastPlayed);
             long.TryParse(state["SizeOnDisk"]?.Value, out var size);
 
+            var installDir = state["installdir"]?.Value;
+            string? installPath = null;
+            if (!string.IsNullOrWhiteSpace(installDir))
+            {
+                // Manifest lives in <library>/steamapps; the game is under common/<installdir>.
+                var candidate = Path.Combine(Path.GetDirectoryName(path)!, "common", installDir);
+                if (Directory.Exists(candidate)) installPath = candidate;
+            }
+
             return new SteamGame
             {
                 AppId = appId,
                 Name = state["name"]?.Value ?? $"App {appId}",
                 Installed = true,
-                InstallDir = state["installdir"]?.Value,
+                InstallDir = installDir,
+                InstallPath = installPath,
                 SizeOnDiskBytes = size,
                 LastPlayed = lastPlayed > 0
                     ? DateTimeOffset.FromUnixTimeSeconds(lastPlayed).UtcDateTime

@@ -35,6 +35,8 @@ public partial class MainWindow : Window
 
     private void Launch_Click(object sender, RoutedEventArgs e) => _vm.Launch();
 
+    private async void Malware_Click(object sender, RoutedEventArgs e) => await _vm.CheckMalwareAsync();
+
     private void GamesList_DoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (GamesList.SelectedItem is SteamGame game)
