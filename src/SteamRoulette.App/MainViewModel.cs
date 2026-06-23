@@ -103,6 +103,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public bool HasPick => _picked is not null;
+
+    /// <summary>True when the rolled game is installed and we know its folder (for the malware check).</summary>
+    public bool CanCheckMalware => _picked is { Installed: true, InstallPath: not null };
+
     public string PickedTitle => _picked?.Name ?? "Hit “Surprise me” to roll a game";
     public string PickedSubtitle
     {
@@ -168,7 +172,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                      nameof(HasGenres), nameof(HasDescription), nameof(PickedDescription), nameof(HasRelease),
                      nameof(PickedRelease), nameof(HasMetacritic), nameof(PickedMetacritic), nameof(PickedPlaytime),
                      nameof(HasPickedAchievements), nameof(PickedAchievementText), nameof(PickedAchievementPercent),
-                     nameof(HasRating), nameof(PickedRating),
+                     nameof(HasRating), nameof(PickedRating), nameof(CanCheckMalware),
                  })
             OnPropertyChanged(name);
     }
@@ -234,6 +238,35 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             Status = "Launch failed: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Hash the rolled game's main executable and open its VirusTotal report. The file is
+    /// never uploaded - only the SHA-256 is used to look up VirusTotal's existing verdict.
+    /// </summary>
+    public async Task CheckMalwareAsync()
+    {
+        if (_picked is not { InstallPath: { } path } game) return;
+        Status = $"Hashing {game.Name}…";
+        try
+        {
+            var url = await Task.Run(() =>
+            {
+                var main = MalwareCheck.FindMainExecutable(path);
+                return main is null ? null : MalwareCheck.VirusTotalUrl(MalwareCheck.Sha256(main));
+            });
+            if (url is null)
+            {
+                Status = $"No executable found in {game.Name}'s folder.";
+                return;
+            }
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            Status = $"Opened VirusTotal for {game.Name}.";
+        }
+        catch (Exception ex)
+        {
+            Status = "Malware check failed: " + ex.Message;
         }
     }
 
