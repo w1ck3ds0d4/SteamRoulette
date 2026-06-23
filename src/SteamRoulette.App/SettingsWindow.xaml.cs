@@ -12,6 +12,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(AppSettings settings)
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
         _settings = settings;
         KeyBox.Text = settings.WebApiKey ?? "";
         SteamIdBox.Text = settings.SteamId ?? "";

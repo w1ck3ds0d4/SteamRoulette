@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
 
         _settings = AppSettings.Load();
         var loader = new LibraryLoader(new WebApiLibrarySource(Http), new LocalLibrarySource());
