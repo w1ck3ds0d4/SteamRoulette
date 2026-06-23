@@ -85,9 +85,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set
         {
             if (!Set(ref _picked, value)) return;
-            OnPropertyChanged(nameof(HasPick));
-            OnPropertyChanged(nameof(PickedTitle));
-            OnPropertyChanged(nameof(PickedSubtitle));
+            RaisePickedProps();
         }
     }
 
@@ -97,13 +95,54 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         get
         {
-            if (_picked is null) return "";
+            if (_picked is null) return "Set filters, then spin the wheel.";
             var bits = new List<string> { _picked.Installed ? "Installed" : "Not installed" };
-            if (_picked.PlaytimeMinutes > 0) bits.Add($"{_picked.PlaytimeHours:0.0} h played");
-            else if (_picked.Source == GameSource.WebApi) bits.Add("never played");
             if (_picked.LastPlayed is DateTime lp) bits.Add($"last played {lp:d MMM yyyy}");
             return string.Join("  ·  ", bits);
         }
+    }
+
+    // ---- rolled-game stats panel ---------------------------------------------------
+
+    public IReadOnlyList<string> PickedGenres => _picked?.Genres ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public bool HasGenres => _picked is { Genres.Count: > 0 };
+
+    public bool HasDescription => !string.IsNullOrWhiteSpace(_picked?.ShortDescription);
+    public string PickedDescription => _picked?.ShortDescription ?? "";
+
+    public bool HasRelease => !string.IsNullOrWhiteSpace(_picked?.ReleaseDate);
+    public string PickedRelease => _picked?.ReleaseDate ?? "";
+
+    public bool HasMetacritic => _picked?.MetacriticScore is not null;
+    public string PickedMetacritic => _picked?.MetacriticScore?.ToString() ?? "";
+
+    public string PickedPlaytime => _picked is null
+        ? ""
+        : _picked.PlaytimeMinutes > 0 ? $"{_picked.PlaytimeHours:0.0} hours" : "Never played";
+
+    public bool HasPickedAchievements => _picked?.AchievementTotal is int t && t > 0;
+    public string PickedAchievementText
+    {
+        get
+        {
+            if (_picked?.AchievementTotal is not int t || t == 0) return "";
+            int u = _picked.AchievementUnlocked ?? 0;
+            return $"{u} / {t} unlocked  ({100.0 * u / t:0}%)";
+        }
+    }
+    public double PickedAchievementPercent =>
+        _picked?.AchievementTotal is int t && t > 0 ? 100.0 * (_picked.AchievementUnlocked ?? 0) / t : 0;
+
+    private void RaisePickedProps()
+    {
+        foreach (var name in new[]
+                 {
+                     nameof(HasPick), nameof(PickedTitle), nameof(PickedSubtitle), nameof(PickedGenres),
+                     nameof(HasGenres), nameof(HasDescription), nameof(PickedDescription), nameof(HasRelease),
+                     nameof(PickedRelease), nameof(HasMetacritic), nameof(PickedMetacritic), nameof(PickedPlaytime),
+                     nameof(HasPickedAchievements), nameof(PickedAchievementText), nameof(PickedAchievementPercent),
+                 })
+            OnPropertyChanged(name);
     }
 
     private bool _busy;
@@ -153,6 +192,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         Picked = pick;
         Status = $"Rolled: {pick.Name}";
+        _ = EnsureEnrichedAsync(pick);
     }
 
     public void Launch()
@@ -229,6 +269,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
                         g.Genres = meta.Genres;
                         g.Categories = meta.Categories;
                         g.HasAchievements = meta.HasAchievements;
+                        g.ShortDescription = meta.ShortDescription;
+                        g.ReleaseDate = meta.ReleaseDate;
+                        g.MetacriticScore = meta.MetacriticScore;
                         foreach (var genre in meta.Genres)
                             if (!Genres.Contains(genre)) Genres.Add(genre);
                     }
@@ -277,6 +320,45 @@ public sealed class MainViewModel : INotifyPropertyChanged
             ApplyFilter();
         }
         catch (OperationCanceledException) { /* reload or close cancelled the scan */ }
+    }
+
+    /// <summary>
+    /// Make sure the just-picked game has its store + achievement data so the stats panel
+    /// is fully populated even if the background scan hasn't reached it yet. Cache-first,
+    /// so it is instant when the game is already enriched.
+    /// </summary>
+    private async Task EnsureEnrichedAsync(SteamGame game)
+    {
+        try
+        {
+            if (game.Genres.Count == 0 || game.HasAchievements is null)
+            {
+                var meta = await _enricher.GetMetadataAsync(game.AppId);
+                if (meta is not null)
+                {
+                    game.Genres = meta.Genres;
+                    game.Categories = meta.Categories;
+                    game.HasAchievements = meta.HasAchievements;
+                    game.ShortDescription = meta.ShortDescription;
+                    game.ReleaseDate = meta.ReleaseDate;
+                    game.MetacriticScore = meta.MetacriticScore;
+                }
+            }
+            if (game.HasAchievements == true && game.AchievementTotal is null &&
+                !string.IsNullOrWhiteSpace(_settings.WebApiKey) && !string.IsNullOrWhiteSpace(_settings.SteamId))
+            {
+                var ach = await _enricher.GetAchievementsAsync(
+                    game.AppId, _settings.WebApiKey!, _settings.SteamId!);
+                if (ach is not null)
+                {
+                    game.AchievementTotal = ach.Total;
+                    game.AchievementUnlocked = ach.UnlockedCount;
+                }
+            }
+        }
+        catch { /* best effort; the panel just shows what we have */ }
+
+        if (ReferenceEquals(game, _picked)) RaisePickedProps();
     }
 
     // ---- INotifyPropertyChanged ----------------------------------------------------
