@@ -154,17 +154,29 @@
         </Style>
         <Style TargetType="ListViewItem">
             <Setter Property="Foreground" Value="#C7D5E0"/>
-            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Padding" Value="2,4"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1B2230"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#243042"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <!-- Full template so selection/hover use flat theme colours instead of the
+                 default Aero gradient + border (which looked out of place). -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <GridViewRowPresenter VerticalAlignment="Center"
+                                                  Content="{TemplateBinding Content}"
+                                                  Columns="{TemplateBinding GridView.ColumnCollection}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1B2230"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#26405C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Slim dark scrollbars -->
@@ -267,6 +279,14 @@
                     <ComboBox Width="150" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Category" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox Width="160" ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Min Metacritic" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Width="48" Text="{Binding MinMetacriticText, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,6,16,0" VerticalAlignment="Center">
                     <TextBlock Text="Max hours" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBox Width="48" Text="{Binding MaxHoursText, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
@@ -362,6 +382,12 @@
                                     </Border>
                                 </StackPanel>
                             </Grid>
+
+                            <!-- Steam user rating -->
+                            <StackPanel Margin="0,12,0,0" Visibility="{Binding HasRating, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="STEAM RATING" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding PickedRating}" Style="{StaticResource StatValue}" TextWrapping="Wrap"/>
+                            </StackPanel>
 
                             <!-- Description -->
                             <StackPanel Margin="0,14,0,0" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}">

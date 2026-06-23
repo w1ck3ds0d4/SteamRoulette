@@ -15,6 +15,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>Sentinel shown in the genre dropdown for "no genre filter".</summary>
     public const string AnyGenre = "All genres";
 
+    /// <summary>Sentinel shown in the category dropdown for "no category filter".</summary>
+    public const string AnyCategory = "All categories";
+
     private readonly LibraryLoader _loader;
     private readonly GameEnricher _enricher;
     private readonly GameRoulette _roulette = new();
@@ -27,6 +30,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     /// <summary>Genres discovered during enrichment, used to populate the genre dropdown.</summary>
     public ObservableCollection<string> Genres { get; } = new() { AnyGenre };
+
+    /// <summary>Categories discovered during enrichment (Single-player, Co-op, ...).</summary>
+    public ObservableCollection<string> Categories { get; } = new() { AnyCategory };
 
     public MainViewModel(LibraryLoader loader, GameEnricher enricher, AppSettings settings)
     {
@@ -42,6 +48,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _excludeDaysText = f.ExcludeRecentDays?.ToString() ?? "";
         _requireAchievements = f.RequireAchievements;
         _onlyIncomplete = f.OnlyIncompleteAchievements;
+        _minMetacriticText = f.MinMetacritic?.ToString() ?? "";
     }
 
     // ---- filter inputs (each re-filters the list as it changes) --------------------
@@ -72,6 +79,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private bool _onlyIncomplete;
     public bool OnlyIncomplete { get => _onlyIncomplete; set { if (Set(ref _onlyIncomplete, value)) ApplyFilter(); } }
+
+    private string _category = AnyCategory;
+    public string Category { get => _category; set { if (Set(ref _category, value)) ApplyFilter(); } }
+
+    private string _minMetacriticText = "";
+    public string MinMetacriticText { get => _minMetacriticText; set { if (Set(ref _minMetacriticText, value)) ApplyFilter(); } }
 
     private string _enrichStatus = "";
     public string EnrichStatus { get => _enrichStatus; set => Set(ref _enrichStatus, value); }
@@ -116,6 +129,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool HasMetacritic => _picked?.MetacriticScore is not null;
     public string PickedMetacritic => _picked?.MetacriticScore?.ToString() ?? "";
 
+    public bool HasRating => _picked?.ReviewPositivePercent is not null;
+    public string PickedRating
+    {
+        get
+        {
+            if (_picked?.ReviewPositivePercent is not int p) return "";
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_picked.ReviewSummary)) parts.Add(_picked.ReviewSummary!);
+            parts.Add($"{p}% positive");
+            if (_picked.ReviewCount is int c) parts.Add($"{c:N0} reviews");
+            return string.Join("  ·  ", parts);
+        }
+    }
+
     public string PickedPlaytime => _picked is null
         ? ""
         : _picked.PlaytimeMinutes > 0 ? $"{_picked.PlaytimeHours:0.0} hours" : "Never played";
@@ -141,6 +168,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                      nameof(HasGenres), nameof(HasDescription), nameof(PickedDescription), nameof(HasRelease),
                      nameof(PickedRelease), nameof(HasMetacritic), nameof(PickedMetacritic), nameof(PickedPlaytime),
                      nameof(HasPickedAchievements), nameof(PickedAchievementText), nameof(PickedAchievementPercent),
+                     nameof(HasRating), nameof(PickedRating),
                  })
             OnPropertyChanged(name);
     }
@@ -227,6 +255,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Genre = string.IsNullOrWhiteSpace(Genre) || Genre == AnyGenre ? null : Genre,
         RequireAchievements = RequireAchievements,
         OnlyIncompleteAchievements = OnlyIncomplete,
+        Category = string.IsNullOrWhiteSpace(Category) || Category == AnyCategory ? null : Category,
+        MinMetacritic = int.TryParse(MinMetacriticText, out var mc) && mc > 0 ? mc : null,
     };
 
     private void ApplyFilter()
@@ -274,6 +304,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                         g.MetacriticScore = meta.MetacriticScore;
                         foreach (var genre in meta.Genres)
                             if (!Genres.Contains(genre)) Genres.Add(genre);
+                        foreach (var cat in meta.Categories)
+                            if (!Categories.Contains(cat)) Categories.Add(cat);
                     }
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
@@ -353,6 +385,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 {
                     game.AchievementTotal = ach.Total;
                     game.AchievementUnlocked = ach.UnlockedCount;
+                }
+            }
+            if (game.ReviewPositivePercent is null)
+            {
+                var rev = await _enricher.GetReviewsAsync(game.AppId);
+                if (rev is not null)
+                {
+                    game.ReviewSummary = rev.Description;
+                    game.ReviewPositivePercent = rev.PositivePercent;
+                    game.ReviewCount = rev.Total;
                 }
             }
         }
