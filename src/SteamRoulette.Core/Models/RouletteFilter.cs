@@ -29,4 +29,10 @@ public sealed class RouletteFilter
 
     /// <summary>Only games that have achievements and aren't 100% unlocked yet.</summary>
     public bool OnlyIncompleteAchievements { get; set; }
+
+    /// <summary>Only games with this Steam category (Single-player, Co-op, ...). Null/empty = any.</summary>
+    public string? Category { get; set; }
+
+    /// <summary>Only games with a Metacritic score at least this high. Null = no minimum.</summary>
+    public int? MinMetacritic { get; set; }
 }

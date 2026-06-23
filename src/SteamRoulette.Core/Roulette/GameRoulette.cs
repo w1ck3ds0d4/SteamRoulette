@@ -28,6 +28,9 @@ public sealed class GameRoulette
             if (filter.RequireAchievements && g.HasAchievements != true) return false;
             if (filter.OnlyIncompleteAchievements &&
                 !(g.HasAchievements == true && g.AchievementsComplete == false)) return false;
+            if (!string.IsNullOrWhiteSpace(filter.Category) &&
+                !g.Categories.Any(x => x.Equals(filter.Category, StringComparison.OrdinalIgnoreCase))) return false;
+            if (filter.MinMetacritic is int minMc && (g.MetacriticScore is null || g.MetacriticScore < minMc)) return false;
             return true;
         }).ToList();
     }
