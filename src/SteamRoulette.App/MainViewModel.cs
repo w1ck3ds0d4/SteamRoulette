@@ -233,7 +233,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                             if (!Genres.Contains(genre)) Genres.Add(genre);
                     }
                 }
-                catch (OperationCanceledException) { return; }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
                 catch { /* skip a game we couldn't read */ }
 
                 if ((i + 1) % 10 == 0 || i + 1 == games.Count)
@@ -262,7 +262,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                             g.AchievementUnlocked = ach.UnlockedCount;
                         }
                     }
-                    catch (OperationCanceledException) { return; }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
                     catch { }
 
                     if ((i + 1) % 10 == 0 || i + 1 == withAch.Count)
