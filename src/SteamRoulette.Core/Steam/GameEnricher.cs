@@ -12,6 +12,7 @@ public sealed class GameEnricher
 {
     private static readonly TimeSpan MetadataTtl = TimeSpan.FromDays(30);
     private static readonly TimeSpan AchievementsTtl = TimeSpan.FromHours(12);
+    private static readonly TimeSpan ReviewsTtl = TimeSpan.FromDays(7);
 
     private readonly SteamStoreClient _store;
     private readonly AchievementsClient _achievements;
@@ -46,5 +47,14 @@ public sealed class GameEnricher
         var ach = await _achievements.GetAsync(appId, apiKey, steamId64, ct);
         if (ach is not null) _cache.Set($"ach_{appId}", ach);
         return ach;
+    }
+
+    public async Task<ReviewSummary?> GetReviewsAsync(int appId, CancellationToken ct = default)
+    {
+        if (_cache.Get<ReviewSummary>($"rev_{appId}", ReviewsTtl) is { } cached) return cached;
+        await _storeLimit.WaitAsync(ct);
+        var rev = await _store.GetReviewsAsync(appId, ct);
+        if (rev is not null) _cache.Set($"rev_{appId}", rev);
+        return rev;
     }
 }

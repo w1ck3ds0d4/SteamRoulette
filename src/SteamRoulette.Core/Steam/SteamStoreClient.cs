@@ -9,6 +9,9 @@ namespace SteamRoulette.Core.Steam;
 /// public appdetails endpoint. No API key required; the endpoint is rate-limited, so
 /// callers should throttle + cache (see <see cref="GameEnricher"/>).
 /// </summary>
+/// <summary>Steam user-review summary for a game (e.g. "Very Positive", 96%, 50000 reviews).</summary>
+public sealed record ReviewSummary(string Description, int PositivePercent, int Total);
+
 public sealed class SteamStoreClient
 {
     private readonly HttpClient _http;
@@ -22,6 +25,29 @@ public sealed class SteamStoreClient
         if (!resp.IsSuccessStatusCode) return null;
         var json = await resp.Content.ReadAsStringAsync(ct);
         return ParseAppDetails(json, appId);
+    }
+
+    /// <summary>The Steam user-review summary (the "Very Positive" rating), via the public appreviews endpoint.</summary>
+    public async Task<ReviewSummary?> GetReviewsAsync(int appId, CancellationToken ct = default)
+    {
+        var url = $"https://store.steampowered.com/appreviews/{appId}?json=1&language=all&purchase_type=all&num_per_page=0";
+        using var resp = await _http.GetAsync(url, ct);
+        if (!resp.IsSuccessStatusCode) return null;
+        var json = await resp.Content.ReadAsStringAsync(ct);
+        return ParseReviews(json);
+    }
+
+    /// <summary>Pure parser for the appreviews query_summary. Null when there are no reviews.</summary>
+    public static ReviewSummary? ParseReviews(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("query_summary", out var qs)) return null;
+        int total = qs.TryGetProperty("total_reviews", out var tr) && tr.TryGetInt32(out var t) ? t : 0;
+        if (total <= 0) return null;
+        int positive = qs.TryGetProperty("total_positive", out var tp) && tp.TryGetInt32(out var p) ? p : 0;
+        string desc = qs.TryGetProperty("review_score_desc", out var d) ? d.GetString() ?? "" : "";
+        int percent = (int)Math.Round(100.0 * positive / total);
+        return new ReviewSummary(desc, percent, total);
     }
 
     /// <summary>Pure parser, split out so it can be unit-tested without the network.</summary>

@@ -47,6 +47,11 @@ public sealed class SteamGame
     public string? ReleaseDate { get; set; }
     public int? MetacriticScore { get; set; }
 
+    /// <summary>Steam review summary text, e.g. "Very Positive". Null until fetched.</summary>
+    public string? ReviewSummary { get; set; }
+    public int? ReviewPositivePercent { get; set; }
+    public int? ReviewCount { get; set; }
+
     /// <summary>True/false once achievement progress is known; null while unknown.</summary>
     public bool? AchievementsComplete =>
         AchievementTotal is int t && AchievementUnlocked is int u ? t > 0 && u >= t : null;
