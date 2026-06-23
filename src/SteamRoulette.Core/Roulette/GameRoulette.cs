@@ -23,6 +23,11 @@ public sealed class GameRoulette
                 (now - last).TotalDays < days) return false;
             if (!string.IsNullOrWhiteSpace(filter.NameContains) &&
                 !g.Name.Contains(filter.NameContains, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrWhiteSpace(filter.Genre) &&
+                !g.Genres.Any(x => x.Equals(filter.Genre, StringComparison.OrdinalIgnoreCase))) return false;
+            if (filter.RequireAchievements && g.HasAchievements != true) return false;
+            if (filter.OnlyIncompleteAchievements &&
+                !(g.HasAchievements == true && g.AchievementsComplete == false)) return false;
             return true;
         }).ToList();
     }

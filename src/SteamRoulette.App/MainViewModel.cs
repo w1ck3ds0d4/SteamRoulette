@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using SteamRoulette.Core;
 using SteamRoulette.Core.Models;
 using SteamRoulette.Core.Roulette;
@@ -11,17 +12,26 @@ namespace SteamRoulette.App;
 /// <summary>Backing state for the main window: library, filters, the current pick, status.</summary>
 public sealed class MainViewModel : INotifyPropertyChanged
 {
+    /// <summary>Sentinel shown in the genre dropdown for "no genre filter".</summary>
+    public const string AnyGenre = "All genres";
+
     private readonly LibraryLoader _loader;
+    private readonly GameEnricher _enricher;
     private readonly GameRoulette _roulette = new();
     private readonly AppSettings _settings;
     private List<SteamGame> _all = new();
+    private CancellationTokenSource? _enrichCts;
 
     /// <summary>The games matching the current filters (what the list shows).</summary>
     public ObservableCollection<SteamGame> Games { get; } = new();
 
-    public MainViewModel(LibraryLoader loader, AppSettings settings)
+    /// <summary>Genres discovered during enrichment, used to populate the genre dropdown.</summary>
+    public ObservableCollection<string> Genres { get; } = new() { AnyGenre };
+
+    public MainViewModel(LibraryLoader loader, GameEnricher enricher, AppSettings settings)
     {
         _loader = loader;
+        _enricher = enricher;
         _settings = settings;
 
         var f = settings.LastFilter;
@@ -30,6 +40,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _weightTowardBacklog = f.WeightTowardUnplayed;
         _maxHoursText = f.MaxPlaytimeMinutes is int m ? (m / 60).ToString() : "";
         _excludeDaysText = f.ExcludeRecentDays?.ToString() ?? "";
+        _requireAchievements = f.RequireAchievements;
+        _onlyIncomplete = f.OnlyIncompleteAchievements;
     }
 
     // ---- filter inputs (each re-filters the list as it changes) --------------------
@@ -51,6 +63,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private string _search = "";
     public string Search { get => _search; set { if (Set(ref _search, value)) ApplyFilter(); } }
+
+    private string _genre = AnyGenre;
+    public string Genre { get => _genre; set { if (Set(ref _genre, value)) ApplyFilter(); } }
+
+    private bool _requireAchievements;
+    public bool RequireAchievements { get => _requireAchievements; set { if (Set(ref _requireAchievements, value)) ApplyFilter(); } }
+
+    private bool _onlyIncomplete;
+    public bool OnlyIncomplete { get => _onlyIncomplete; set { if (Set(ref _onlyIncomplete, value)) ApplyFilter(); } }
+
+    private string _enrichStatus = "";
+    public string EnrichStatus { get => _enrichStatus; set => Set(ref _enrichStatus, value); }
 
     // ---- current pick + status -----------------------------------------------------
 
@@ -105,6 +129,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             ApplyFilter();
             Status = result.Warning
                      ?? $"Loaded {_all.Count} games via {(result.UsedWebApi ? "Steam Web API" : "local files")}.";
+            StartEnrichment();
         }
         catch (Exception ex)
         {
@@ -159,6 +184,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         MaxPlaytimeMinutes = int.TryParse(MaxHoursText, out var h) && h > 0 ? h * 60 : null,
         ExcludeRecentDays = int.TryParse(ExcludeDaysText, out var d) && d > 0 ? d : null,
         NameContains = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
+        Genre = string.IsNullOrWhiteSpace(Genre) || Genre == AnyGenre ? null : Genre,
+        RequireAchievements = RequireAchievements,
+        OnlyIncompleteAchievements = OnlyIncomplete,
     };
 
     private void ApplyFilter()
@@ -167,6 +195,88 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Games.Clear();
         foreach (var g in pool) Games.Add(g);
         CountText = $"{Games.Count} of {_all.Count} games match";
+    }
+
+    // ---- background enrichment -----------------------------------------------------
+
+    private void StartEnrichment()
+    {
+        _enrichCts?.Cancel();
+        _enrichCts = new CancellationTokenSource();
+        _ = EnrichAsync(_all.ToList(), _enrichCts.Token);
+    }
+
+    /// <summary>
+    /// Fills in genres / categories / achievement progress in the background. Started from
+    /// the UI thread without ConfigureAwait(false), so continuations resume on the UI
+    /// thread and it is safe to touch Games/Genres directly. The awaits yield, so the UI
+    /// stays responsive through the rate-limited scan; results are cached to disk.
+    /// </summary>
+    private async Task EnrichAsync(List<SteamGame> games, CancellationToken ct)
+    {
+        try
+        {
+            // Pass 1: store metadata (genres, categories, has-achievements).
+            for (int i = 0; i < games.Count; i++)
+            {
+                if (ct.IsCancellationRequested) return;
+                var g = games[i];
+                try
+                {
+                    var meta = await _enricher.GetMetadataAsync(g.AppId, ct);
+                    if (meta is not null)
+                    {
+                        g.Genres = meta.Genres;
+                        g.Categories = meta.Categories;
+                        g.HasAchievements = meta.HasAchievements;
+                        foreach (var genre in meta.Genres)
+                            if (!Genres.Contains(genre)) Genres.Add(genre);
+                    }
+                }
+                catch (OperationCanceledException) { return; }
+                catch { /* skip a game we couldn't read */ }
+
+                if ((i + 1) % 10 == 0 || i + 1 == games.Count)
+                {
+                    EnrichStatus = $"Loading game details… {i + 1}/{games.Count}";
+                    ApplyFilter();
+                }
+            }
+
+            // Pass 2: achievement progress - needs a key + SteamID, only for games that have any.
+            if (!string.IsNullOrWhiteSpace(_settings.WebApiKey) &&
+                !string.IsNullOrWhiteSpace(_settings.SteamId))
+            {
+                var withAch = games.Where(g => g.HasAchievements == true).ToList();
+                for (int i = 0; i < withAch.Count; i++)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var g = withAch[i];
+                    try
+                    {
+                        var ach = await _enricher.GetAchievementsAsync(
+                            g.AppId, _settings.WebApiKey!, _settings.SteamId!, ct);
+                        if (ach is not null)
+                        {
+                            g.AchievementTotal = ach.Total;
+                            g.AchievementUnlocked = ach.UnlockedCount;
+                        }
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch { }
+
+                    if ((i + 1) % 10 == 0 || i + 1 == withAch.Count)
+                    {
+                        EnrichStatus = $"Loading achievements… {i + 1}/{withAch.Count}";
+                        ApplyFilter();
+                    }
+                }
+            }
+
+            EnrichStatus = "";
+            ApplyFilter();
+        }
+        catch (OperationCanceledException) { /* reload or close cancelled the scan */ }
     }
 
     // ---- INotifyPropertyChanged ----------------------------------------------------

@@ -33,6 +33,20 @@ public sealed class SteamGame
 
     public GameSource Source { get; set; }
 
+    // ---- enrichment: filled in lazily from the store + achievement APIs --------------
+    public List<string> Genres { get; set; } = new();
+    public List<string> Categories { get; set; } = new();
+
+    /// <summary>Whether the game has Steam achievements. Null while not yet known.</summary>
+    public bool? HasAchievements { get; set; }
+
+    public int? AchievementTotal { get; set; }
+    public int? AchievementUnlocked { get; set; }
+
+    /// <summary>True/false once achievement progress is known; null while unknown.</summary>
+    public bool? AchievementsComplete =>
+        AchievementTotal is int t && AchievementUnlocked is int u ? t > 0 && u >= t : null;
+
     public double PlaytimeHours => PlaytimeMinutes / 60.0;
 
     /// <summary>Tick when installed, empty otherwise. Convenience for list binding.</summary>
