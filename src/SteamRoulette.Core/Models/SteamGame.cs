@@ -43,6 +43,10 @@ public sealed class SteamGame
     public int? AchievementTotal { get; set; }
     public int? AchievementUnlocked { get; set; }
 
+    public string? ShortDescription { get; set; }
+    public string? ReleaseDate { get; set; }
+    public int? MetacriticScore { get; set; }
+
     /// <summary>True/false once achievement progress is known; null while unknown.</summary>
     public bool? AchievementsComplete =>
         AchievementTotal is int t && AchievementUnlocked is int u ? t > 0 && u >= t : null;
@@ -51,6 +55,17 @@ public sealed class SteamGame
 
     /// <summary>Tick when installed, empty otherwise. Convenience for list binding.</summary>
     public string InstalledMark => Installed ? "✔" : "";
+
+    /// <summary>Compact achievement progress for the list column: "✓ 30", "25/50", or "".</summary>
+    public string AchievementSummary
+    {
+        get
+        {
+            if (AchievementTotal is not int t || t == 0) return "";
+            int u = AchievementUnlocked ?? 0;
+            return u >= t ? $"✓ {t}" : $"{u}/{t}";
+        }
+    }
 
     /// <summary>Capsule/header image shown on the store; derived purely from the appid.</summary>
     public string HeaderImageUrl =>
