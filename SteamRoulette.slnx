@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SteamRoulette.App/SteamRoulette.App.csproj" />
+    <Project Path="src/SteamRoulette.Core/SteamRoulette.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SteamRoulette.Tests/SteamRoulette.Tests.csproj" />
+  </Folder>
+</Solution>
