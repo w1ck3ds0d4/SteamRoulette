@@ -15,15 +15,15 @@ Built with C# and .NET 10 (WPF). A pure `Core` library holds all the logic (Stea
 ## Features (Built)
 
 ### Library loading
-- **Web API source** — full owned-games list with playtime and last-played, via `IPlayerService/GetOwnedGames` (needs a free Web API key + your SteamID).
-- **Local source** — installed games parsed from `libraryfolders.vdf` + `appmanifest_*.acf` across every Steam library folder. No key, fully offline.
-- **Merged** — uses the Web API when configured (marking which titles are installed from local data), and falls back to local-only otherwise or if the API call fails.
+- **Web API source** - full owned-games list with playtime and last-played, via `IPlayerService/GetOwnedGames` (needs a free Web API key + your SteamID).
+- **Local source** - installed games parsed from `libraryfolders.vdf` + `appmanifest_*.acf` across every Steam library folder. No key, fully offline.
+- **Merged** - uses the Web API when configured (marking which titles are installed from local data), and falls back to local-only otherwise or if the API call fails.
 
 ### The roulette
-- **🎲 Surprise me** — random pick from whatever matches your current filters.
-- **Filters** — installed only · unplayed only · max hours · hide games played in the last N days · name search.
-- **Favor my backlog** — weighted draw that biases toward games with little playtime, so the pile you never touch wins more often.
-- **Launch in Steam** — fires `steam://run/<appid>` for the chosen game. Double-click any game in the list to make it the pick.
+- **🎲 Surprise me** - random pick from whatever matches your current filters.
+- **Filters** - installed only · unplayed only · max hours · hide games played in the last N days · name search.
+- **Favor my backlog** - weighted draw that biases toward games with little playtime, so the pile you never touch wins more often.
+- **Launch in Steam** - fires `steam://run/<appid>` for the chosen game. Double-click any game in the list to make it the pick.
 
 ### Persistence
 - Web API key, SteamID, and your last-used filters are saved to `%APPDATA%\SteamRoulette\settings.json`.
@@ -32,10 +32,10 @@ Built with C# and .NET 10 (WPF). A pure `Core` library holds all the logic (Stea
 
 ## Roadmap
 
-- **Achievement manager (the SAM half)** — list a game's achievements/stats via the Steamworks SDK (`ISteamUserStats`) and unlock / lock / reset them for games you own, with Steam running.
-- **Backlog ↔ achievement cross-over** — "pick a game I'm one achievement away from 100%-ing."
-- **Richer library data** — genres/tags and store metadata for genre-based rolls.
-- **Game art polish** — cached capsule art, a spin animation on the pick.
+- **Achievement manager (the SAM half)** - list a game's achievements/stats via the Steamworks SDK (`ISteamUserStats`) and unlock / lock / reset them for games you own, with Steam running.
+- **Backlog ↔ achievement cross-over** - "pick a game I'm one achievement away from 100%-ing."
+- **Richer library data** - genres/tags and store metadata for genre-based rolls.
+- **Game art polish** - cached capsule art, a spin animation on the pick.
 
 ---
 
@@ -50,19 +50,19 @@ dotnet test                                     # run the Core unit tests
 ```
 
 On first run it lists your **installed** games. To roulette your whole owned library (with playtime filters), open **⚙ Settings** and add:
-- a **Steam Web API key** — get one at <https://steamcommunity.com/dev/apikey>
-- your **64-bit SteamID** — find it at <https://steamid.io>
+- a **Steam Web API key** - get one at <https://steamcommunity.com/dev/apikey>
+- your **64-bit SteamID** - find it at <https://steamid.io>
 
 ## How it works
 
-- `SteamRoulette.Core` — pure, testable logic:
-  - `Steam/VdfParser` — minimal Valve KeyValues (VDF/ACF) parser, dependency-free.
-  - `Steam/SteamPaths` — locates Steam (registry + defaults) and enumerates library folders.
-  - `Steam/LocalLibrarySource` · `WebApiLibrarySource` · `LibraryLoader` — the three load paths.
-  - `Roulette/GameRoulette` — filtering + flat/weighted random pick.
-  - `Steam/GameLauncher` — `steam://` launch.
-- `SteamRoulette.App` — WPF UI (`MainViewModel` + `MainWindow` + `SettingsWindow`).
-- `SteamRoulette.Tests` — xUnit tests for the parser and the roulette.
+- `SteamRoulette.Core` - pure, testable logic:
+  - `Steam/VdfParser` - minimal Valve KeyValues (VDF/ACF) parser, dependency-free.
+  - `Steam/SteamPaths` - locates Steam (registry + defaults) and enumerates library folders.
+  - `Steam/LocalLibrarySource` · `WebApiLibrarySource` · `LibraryLoader` - the three load paths.
+  - `Roulette/GameRoulette` - filtering + flat/weighted random pick.
+  - `Steam/GameLauncher` - `steam://` launch.
+- `SteamRoulette.App` - WPF UI (`MainViewModel` + `MainWindow` + `SettingsWindow`).
+- `SteamRoulette.Tests` - xUnit tests for the parser and the roulette.
 
 ## Project layout
 
