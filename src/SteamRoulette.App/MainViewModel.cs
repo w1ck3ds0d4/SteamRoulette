@@ -219,7 +219,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Status = _all.Count == 0
                 ? "No games loaded yet."
-                : "No games match the current filters — loosen them and spin again.";
+                : "No games match the current filters - loosen them and spin again.";
             return;
         }
         Picked = pick;
