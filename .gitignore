@@ -13,3 +13,10 @@ obj/
 # OS
 Thumbs.db
 .DS_Store
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
