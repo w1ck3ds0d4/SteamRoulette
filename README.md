@@ -10,9 +10,21 @@ Built with C# and .NET 10 (WPF). A pure `Core` library holds all the logic (Stea
 
 > **Heads up:** this is the first half of the project: read-only achievement progress is in, the editing half is not. A SteamAchievementManager-style achievement/stat editor is on the roadmap below. Editing achievements talks to your running Steam client for games you own and sits in a gray area of Steam's Subscriber Agreement, so it is deliberately kept separate and opt-in.
 
----
+## Getting started
 
-## Features (Built)
+Requires the **.NET 10 SDK** on Windows (WPF is Windows-only).
+
+```sh
+# from the repo root
+dotnet run --project src/SteamRoulette.App      # launch the app
+dotnet test                                     # run the Core unit tests
+```
+
+On first run it lists your **installed** games. To roulette your whole owned library (with playtime filters), open **⚙ Settings** and add:
+- a **Steam Web API key** - get one at <https://steamcommunity.com/dev/apikey>
+- your **64-bit SteamID** - find it at <https://steamid.io>
+
+## Features (built)
 
 ### Library loading
 - **Web API source** - full owned-games list with playtime and last-played, via `IPlayerService/GetOwnedGames` (needs a free Web API key + your SteamID).
@@ -33,29 +45,11 @@ Built with C# and .NET 10 (WPF). A pure `Core` library holds all the logic (Stea
 ### Persistence
 - Web API key, SteamID, and your last-used filters are saved to `%APPDATA%\SteamRoulette\settings.json`.
 
----
-
 ## Roadmap
 
 - **Achievement manager (the SAM half)** - list a game's achievements/stats via the Steamworks SDK (`ISteamUserStats`) and unlock / lock / reset them for games you own, with Steam running.
 - **Backlog ↔ achievement cross-over** - "pick a game I'm one achievement away from 100%-ing" (progress is read and filterable already; this exact pick is not built).
 - **Game art polish** - cached capsule art, a spin animation on the pick.
-
----
-
-## Getting started
-
-Requires the **.NET 10 SDK** on Windows (WPF is Windows-only).
-
-```sh
-# from the repo root
-dotnet run --project src/SteamRoulette.App      # launch the app
-dotnet test                                     # run the Core unit tests
-```
-
-On first run it lists your **installed** games. To roulette your whole owned library (with playtime filters), open **⚙ Settings** and add:
-- a **Steam Web API key** - get one at <https://steamcommunity.com/dev/apikey>
-- your **64-bit SteamID** - find it at <https://steamid.io>
 
 ## How it works
 
