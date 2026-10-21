@@ -8,40 +8,7 @@ Steam Roulette is a small Windows desktop app that reads your Steam library and 
 
 Built with C# and .NET 10 (WPF). A pure `Core` library holds all the logic (Steam-file parsing, Web API, the roulette) with unit tests; the WPF project is a thin UI on top. No installer, no external services.
 
-> **Heads up:** this is the first half of the project: read-only achievement progress is in, the editing half is not. A SteamAchievementManager-style achievement/stat editor is on the roadmap below. Editing achievements talks to your running Steam client for games you own and sits in a gray area of Steam's Subscriber Agreement, so it is deliberately kept separate and opt-in.
-
----
-
-## Features (Built)
-
-### Library loading
-- **Web API source** - full owned-games list with playtime and last-played, via `IPlayerService/GetOwnedGames` (needs a free Web API key + your SteamID).
-- **Local source** - installed games parsed from `libraryfolders.vdf` + `appmanifest_*.acf` across every Steam library folder. No key, fully offline.
-- **Merged** - uses the Web API when configured (marking which titles are installed from local data), and falls back to local-only otherwise or if the API call fails.
-
-### The roulette
-- **🎲 Surprise me** - random pick from whatever matches your current filters.
-- **Filters** - installed only · unplayed only · max hours · hide games played in the last N days · name search · genre · category (Single-player, Co-op...) · minimum Metacritic · has achievements · unfinished achievements.
-- **Favor my backlog** - weighted draw that biases toward games with little playtime, so the pile you never touch wins more often.
-- **Launch in Steam** - fires `steam://run/<appid>` for the chosen game. Double-click any game in the list to make it the pick.
-
-### Store data, achievements and safety
-- **Store metadata** - genres, categories, Metacritic and ratings from the Steam store (`SteamStoreClient` / `GameEnricher`, with a `JsonDiskCache` and a `RateLimiter`).
-- **Achievements** - a stats panel and an Achievements column with read-only progress (`GetSchemaForGame` + `GetPlayerAchievements`; needs the Web API key and SteamID).
-- **Check this game for malware** - hashes the game's largest exe and opens a VirusTotal report in your browser. The file is never uploaded.
-
-### Persistence
-- Web API key, SteamID, and your last-used filters are saved to `%APPDATA%\SteamRoulette\settings.json`.
-
----
-
-## Roadmap
-
-- **Achievement manager (the SAM half)** - list a game's achievements/stats via the Steamworks SDK (`ISteamUserStats`) and unlock / lock / reset them for games you own, with Steam running.
-- **Backlog ↔ achievement cross-over** - "pick a game I'm one achievement away from 100%-ing" (progress is read and filterable already; this exact pick is not built).
-- **Game art polish** - cached capsule art, a spin animation on the pick.
-
----
+> **Heads up:** this is the first half of the project. A SteamAchievementManager-style achievement/stat editor is on the roadmap below. Editing achievements talks to your running Steam client for games you own and sits in a gray area of Steam's Subscriber Agreement, so it is deliberately kept separate and opt-in.
 
 ## Getting started
 
@@ -57,6 +24,29 @@ On first run it lists your **installed** games. To roulette your whole owned lib
 - a **Steam Web API key** - get one at <https://steamcommunity.com/dev/apikey>
 - your **64-bit SteamID** - find it at <https://steamid.io>
 
+## Features (built)
+
+### Library loading
+- **Web API source** - full owned-games list with playtime and last-played, via `IPlayerService/GetOwnedGames` (needs a free Web API key + your SteamID).
+- **Local source** - installed games parsed from `libraryfolders.vdf` + `appmanifest_*.acf` across every Steam library folder. No key, fully offline.
+- **Merged** - uses the Web API when configured (marking which titles are installed from local data), and falls back to local-only otherwise or if the API call fails.
+
+### The roulette
+- **🎲 Surprise me** - random pick from whatever matches your current filters.
+- **Filters** - installed only · unplayed only · max hours · hide games played in the last N days · name search.
+- **Favor my backlog** - weighted draw that biases toward games with little playtime, so the pile you never touch wins more often.
+- **Launch in Steam** - fires `steam://run/<appid>` for the chosen game. Double-click any game in the list to make it the pick.
+
+### Persistence
+- Web API key, SteamID, and your last-used filters are saved to `%APPDATA%\SteamRoulette\settings.json`.
+
+## Roadmap
+
+- **Achievement manager (the SAM half)** - list a game's achievements/stats via the Steamworks SDK (`ISteamUserStats`) and unlock / lock / reset them for games you own, with Steam running.
+- **Backlog ↔ achievement cross-over** - "pick a game I'm one achievement away from 100%-ing."
+- **Richer library data** - genres/tags and store metadata for genre-based rolls.
+- **Game art polish** - cached capsule art, a spin animation on the pick.
+
 ## How it works
 
 - `SteamRoulette.Core` - pure, testable logic:
@@ -65,10 +55,8 @@ On first run it lists your **installed** games. To roulette your whole owned lib
   - `Steam/LocalLibrarySource` · `WebApiLibrarySource` · `LibraryLoader` - the three load paths.
   - `Roulette/GameRoulette` - filtering + flat/weighted random pick.
   - `Steam/GameLauncher` - `steam://` launch.
-  - `Steam/AchievementsClient` · `SteamStoreClient` · `GameEnricher` · `JsonDiskCache` · `RateLimiter` · `MalwareCheck` - achievements, store metadata and the malware check.
-  - `Models/` - `Achievement`, `GameMetadata`, `RouletteFilter`, `SteamGame`.
-- `SteamRoulette.App` - WPF UI (`MainViewModel` + `MainWindow` + `SettingsWindow` + `DarkTitleBar`).
-- `SteamRoulette.Tests` - xUnit tests for the parser, the roulette, achievements and store parsing, the disk cache, the malware check and filter enrichment.
+- `SteamRoulette.App` - WPF UI (`MainViewModel` + `MainWindow` + `SettingsWindow`).
+- `SteamRoulette.Tests` - xUnit tests for the parser and the roulette.
 
 ## Project layout
 
