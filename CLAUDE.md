@@ -5,7 +5,7 @@ random game to play, with backlog-aware filters. `SteamRoulette.Core` holds all 
 (Steam file parsing, Web API, the roulette) with unit tests; `SteamRoulette.App` is a thin
 WPF UI on top. No installer, no external services beyond the optional Steam Web API.
 
-Status: maintain. No new features without Daniel's go. See ROADMAP.md.
+Status: maintain. No new features without the maintainer's go. See ROADMAP.md.
 
 ## Commands
 

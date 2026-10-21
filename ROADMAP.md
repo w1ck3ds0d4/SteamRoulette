@@ -3,10 +3,10 @@
 **Status:** maintain. **Last reviewed:** 2026-09-24.
 
 The backlog roulette (library loading, filters, weighted picks, launch-in-Steam) is functionally
-complete and Daniel uses it. It is a personal tool with no income path, so it does not get an
+complete and the maintainer uses it. It is a personal tool with no income path, so it does not get an
 active roadmap slot right now: "done" for now means CI stays green and dependencies stay patched.
 
-> How this file is used: Claude Project threads build the first unticked item under **Now**, one item per branch and pull request, and tick it in that same PR as `- [x] ... (#PR)`. Daniel owns the order and the lists; threads never add to Now, Next or Later themselves, they propose under **Ideas**.
+> How this file is used: Claude Project threads build the first unticked item under **Now**, one item per branch and pull request, and tick it in that same PR as `- [x] ... (#PR)`. The maintainer owns the order and the lists; threads never add to Now, Next or Later themselves, they propose under **Ideas**.
 
 ## Now
 
