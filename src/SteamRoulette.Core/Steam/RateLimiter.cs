@@ -10,8 +10,17 @@ public sealed class RateLimiter
     private readonly SemaphoreSlim _gate = new(1, 1);
     private DateTime _lastUtc = DateTime.MinValue;
 
+    /// <summary>Creates a limiter that spaces released callers at least <paramref name="minInterval"/> apart.</summary>
+    /// <param name="minInterval">Minimum time between two consecutive released callers.</param>
     public RateLimiter(TimeSpan minInterval) => _minInterval = minInterval;
 
+    /// <summary>
+    /// Waits until at least <c>minInterval</c> has elapsed since the previous released caller,
+    /// so callers are serialized in FIFO-ish order through the semaphore. Throws
+    /// <see cref="OperationCanceledException"/> if <paramref name="ct"/> is cancelled while
+    /// queued or delaying.
+    /// </summary>
+    /// <param name="ct">Cancels the wait.</param>
     public async Task WaitAsync(CancellationToken ct = default)
     {
         await _gate.WaitAsync(ct);
