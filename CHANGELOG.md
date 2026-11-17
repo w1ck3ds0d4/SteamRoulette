@@ -19,6 +19,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 - Dark title bar and slim themed scrollbars (#8)
 - Dice app icon (#9)
 - Replaced em dashes with hyphens throughout (#13)
+- Standardised the README structure and the repository doc set
+- Documented the RateLimiter constructor and WaitAsync
 
 ### Infrastructure
 
